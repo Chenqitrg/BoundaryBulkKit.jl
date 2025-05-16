@@ -1,7 +1,3 @@
-using TensorKit
-using TensorKitSectors
-using LinearAlgebra
-
 function HalfBraiding_charge(a::QDℤ{N}, V::GradedSpace{ZNIrrep{N}, NTuple{N, Int64}}) where {N}
     fgt_a = forget_flux(a)
     W = ZNSpace{N}(fgt_a=>1)
@@ -14,6 +10,12 @@ function HalfBraiding_charge(a::QDℤ{N}, V::GradedSpace{ZNIrrep{N}, NTuple{N, I
     return Ω
 end
 
-HalfBraiding_charge(QDℤ{2}(1,1), Z2Space(0=>2,1=>2))
-# V = Z2Space(0=>2,1=>2)
-# dim(V, Z2Irrep(0))
+# Example:
+
+# for a in SectorValues{QDℤ{2}}()
+#     @show HalfBraiding_charge(a, Z2Space(0=>2,1=>2))
+# end
+
+# VecGIrr{ℤ₂}(ℤ₂(1))
+# ℤ₂×ℤ₂
+# QDAb{ℤ₂×ℤ₂}
