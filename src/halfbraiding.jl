@@ -1,7 +1,9 @@
+forget_flux(a::QDℤ{N}) where {N} = ZNSpace{N}(a.charge=>1)
+foget_charge(a::QDℤ{N}) where {N} = ZNSpace{N}(a.flux=>1)
+
 function HalfBraiding_charge(a::QDℤ{N}, V::GradedSpace{ZNIrrep{N}, NTuple{N, Int64}}) where {N}
     fgt_a = forget_flux(a)
-    W = ZNSpace{N}(fgt_a=>1)
-    Ω = zeros(ComplexF64, V⊗W←W⊗V)
+    Ω = zeros(ComplexF64, V⊗fgt_a←fgt_a⊗V)
     for tree in fusiontrees(Ω)
         charge = tree[1].uncoupled[1]
         d = dim(V, charge)
