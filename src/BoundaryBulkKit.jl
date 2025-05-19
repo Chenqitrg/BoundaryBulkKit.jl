@@ -1,6 +1,6 @@
 module BoundaryBulkKit
 
-export HalfBraiding, forget_flux, forget_charge
+export HalfBraiding, forget
 
 using TensorKit
 using TensorKitSectors
