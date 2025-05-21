@@ -24,7 +24,7 @@ function HalfBraiding(a::QDℤ{N}, V::GradedSpace{ZNIrrep{N}, NTuple{N, Int64}})
     return Ω
 end
 
-function _half_braiding_phase(bulk::ProductSector{T}, boundary::ProductSector{F}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:ZNSectorTuple}
+function _half_braiding_phase(bulk::ProductSector{T}, boundary::ProductSector{F}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:Tuple{Vararg{<:ZNIrrep}}}
     phase = 1.0 + 0 * im
     for (anyon, charge) in zip(bulk, boundary)
         N = typeof(charge).parameters[1]
@@ -33,7 +33,7 @@ function _half_braiding_phase(bulk::ProductSector{T}, boundary::ProductSector{F}
     return phase
 end
 
-function HalfBraiding(a::ProductSector{T}, V::GradedSpace{ProductSector{F}, G}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:ZNSectorTuple, G<:Tuple{Vararg{Int}}}
+function HalfBraiding(a::ProductSector{T}, V::GradedSpace{ProductSector{F}, G}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:Tuple{Vararg{<:ZNIrrep}}, G<:Tuple{Vararg{Int}}}
     if length(a.sectors) != length(F.parameters)
         throw(ArgumentError("The layer of object $a does not match that of the graded space $V"))
     end
