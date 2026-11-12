@@ -1,64 +1,75 @@
+# Within each boundary sector, order by bulk sector, bulk copy, then junction.
+function _forget_layout(A::GradedSpace{C}) where {I,C<:DrinfeldCenter{I}}
+    totals = Dict{I,Int}()
+    summands = map(collect(sectors(A))) do a
+        X = forget(a)
+        copies = dim(A, a)
+        firstcopy = Dict{I,UnitRange{Int}}()
+        for r in sectors(X)
+            offset = get(totals, r, 0)
+            n = dim(X, r)
+            firstcopy[r] = (offset + 1):(offset + n)
+            totals[r] = offset + copies * n
+        end
+        return (; a, copies, firstcopy)
+    end
+    W = Vect[I](totals)
+    return (isdual(A) ? flip(W) : W), summands
+end
 
+"""
+    forget(A::GradedSpace{C}) where C <: DrinfeldCenter
 
-# function forget(a::ProductSector{T}) where {T<:Tuple{Vararg{QDℤ}}}
-#     forgets = ()
-#     for layer in a
-#         forgets = (forgets..., forget(layer))
-#     end
-#     return fuse(⊠(forgets...))
-# end
+Underlying boundary space of a center leg. Within each boundary sector, copies
+are ordered by `sectors(A)`, then by copy in `A`, then by junction in the
+simple object's fixed basis. Preserve the dual orientation of the leg.
+"""
+forget(A::GradedSpace{<:DrinfeldCenter}) = first(_forget_layout(A))
 
-# function forget(a::ProductSector{Tuple{𝒞, TimeReversed{𝒞}}}) where {𝒞<:ModularSector}
-#     aup, adown = a.sectors
-#     return Vect[𝒞](aup=>1)⊗Vect[𝒞](adown.a=>1)
-# end
+"""
+    HalfBraiding(A, V; T=ComplexF64)
+    HalfBraiding(a, V; T=ComplexF64)
 
-# function _half_braiding_phase(bulk::ProductSector{T}, boundary::ProductSector{F}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:Tuple{Vararg{<:ZNIrrep}}}
-#     phase = 1.0 + 0 * im
-#     for (anyon, charge) in zip(bulk, boundary)
-#         N = typeof(charge).parameters[1]
-#         phase *= cis(2 * pi/N * anyon.flux * charge.n)
-#     end
-#     return phase
-# end
+Materialize the boundary TensorMap `V ⊗ forget(A) ← forget(A) ⊗ V`, for a
+center-graded leg `A` and a boundary leg `V`. Each simple half-braiding
+symbol acts on junction copies and preserves both external multiplicity
+indices. A simple center label `a` can also be passed directly.
+"""
+function HalfBraiding(A::GradedSpace{C}, V::ElementarySpace; T::Type{<:Number}=ComplexF64) where {C<:DrinfeldCenter}
+    sectortype(V) === base_sector(C) || throw(SectorMismatch("boundary leg must have sector type $(base_sector(C))"))
+    X, summands = _forget_layout(A)
+    return _assemble_halfbraiding(T, X, V, summands)
+end
 
-# function HalfBraiding(a::ProductSector{T}, V::GradedSpace{ProductSector{F}, G}) where {T<:Tuple{Vararg{<:QDℤ}}, F<:Tuple{Vararg{<:ZNIrrep}}, G<:Tuple{Vararg{Int}}}
-#     if length(a.sectors) != length(F.parameters)
-#         throw(ArgumentError("The layer of object $a does not match that of the graded space $V"))
-#     end
+function HalfBraiding(a::DrinfeldCenter{I}, V::ElementarySpace; T::Type{<:Number}=ComplexF64) where {I}
+    sectortype(V) === I || throw(SectorMismatch("boundary leg must have sector type $I"))
+    X = forget(a)
+    firstcopy = Dict(r => 1:dim(X, r) for r in sectors(X))
+    return _assemble_halfbraiding(T, X, V, ((; a, copies=1, firstcopy),))
+end
 
-#     fgt_a = forget(a)
-
-#     if sectortype(fgt_a) != sectortype(V)
-#         throw(ArgumentError("The sector of forget($a) does not match that of the graded space $V"))
-#     end
-
-#     Ω = zeros(ComplexF64, V⊗fgt_a←fgt_a⊗V)
-
-#     for tree in fusiontrees(Ω)
-#         charge = tree[1].uncoupled[1]
-#         d = dim(V, charge)
-#         Ω[tree...] .= _half_braiding_phase(a, charge) * reshape(Matrix(I, d, d), (d, 1, 1, d))
-#     end
-#     return Ω
-# end
-
-# function HalfBraiding(a::ProductSector{Tuple{𝒞, TimeReversed{𝒞}}}, V::GradedSpace{𝒞, T}) where {𝒞<:ModularSector, T<:Tuple{Vararg{Int}}}
-#     WW = forget(a)
-#     Wup, Wdown = WW.spaces
-#     W = fuse(WW)
-#     WWTW = unitary(WW ← W)
-#     @planar Ω[vu wu; wd vd] := WWTW'[wu; newup newdown] * BraidingTensor(Wup, V)[vu newup; up vmd] * BraidingTensor(V, Wdown)'[vmd newdown; down vd] * WWTW[up down; wd]
-#     return Ω
-# end
-
-
-# Example:
-
-# for a in SectorValues{QDℤ{2}}()
-#     @show HalfBraiding_charge(a, Z2Space(0=>2,1=>2))
-# end
-
-# VecGIrr{ℤ₂}(ℤ₂(1))
-# ℤ₂×ℤ₂
-# QDAb{ℤ₂×ℤ₂}
+function _assemble_halfbraiding(::Type{T}, X::ElementarySpace, V::ElementarySpace, summands) where {T}
+    Γ = zeros(T, V ⊗ X ← X ⊗ V)
+    for (f, g) in fusiontrees(Γ)
+        i, r = f.uncoupled
+        s, k = g.uncoupled
+        i == k || continue
+        B = Γ[f, g]
+        for part in summands
+            rows = get(part.firstcopy, r, 1:0)
+            cols = get(part.firstcopy, s, 1:0)
+            (isempty(rows) || isempty(cols)) && continue
+            Ω = halfbraiding_symbol(part.a, i, r, s, f.coupled, only(f.vertices), only(g.vertices))
+            size(Ω) == (length(rows), length(cols)) ||
+                throw(DimensionMismatch("half-braiding symbol has size $(size(Ω)); expected $((length(rows), length(cols)))"))
+            for p in 0:(part.copies - 1)
+                out = rows .+ p * length(rows)
+                input = cols .+ p * length(cols)
+                for b in axes(B, 1)
+                    B[b, out, input, b] .= Ω
+                end
+            end
+        end
+    end
+    return Γ
+end
