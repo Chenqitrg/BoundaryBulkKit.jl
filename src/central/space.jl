@@ -29,7 +29,7 @@ function _centralblocks(out::ProductSpace, input::ProductSpace)
     offset = 0
     for a in blocksectors(input)
         W = forget(a)
-        rowlabels = ((f, v) for r in blocksectors(TensorKit.HomSpace(out, W))
+        rowlabels = ((f, v) for r in blocksectors(ProductSpace(W))
                      for v in _junctions(a, r, dim(W, r)) for f in fusiontrees(out, r))
         rows, m = _axisranges(R, rowlabels) do (f, v)
             dim(out, f.uncoupled)

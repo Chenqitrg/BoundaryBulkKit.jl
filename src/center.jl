@@ -51,3 +51,19 @@ Return a three-axis array indexed by the copies of `r` in `forget(a)`, `s` in
 one-based. Only admissible vertices are queried.
 """
 function forget_vertex end
+
+# The boundary irrep type already carries its group parameter.
+abstract type GroupDoubleSector{I<:TKS.AbstractIrrep} <: DrinfeldCenter{I} end
+
+"""
+    QuantumDouble{G}
+
+Family of group quantum doubles for the TensorKit group type `G`.
+The concrete boundary irrep type can be recovered with `base_sector`.
+For example, `Z3QuantumDouble <: QuantumDouble{ℤ{3}}` and its boundary
+sector type is `Z3Irrep`.
+"""
+const QuantumDouble{G<:TKS.Group} = GroupDoubleSector{I} where {I<:TKS.AbstractIrrep{G}}
+
+"""Return the default concrete center sector type for a boundary sector type."""
+function take_center end

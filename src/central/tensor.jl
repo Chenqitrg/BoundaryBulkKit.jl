@@ -43,7 +43,8 @@ function TensorKit.block(U::CentralTensorMap, a::Sector)
     typeof(a) === sectortype(domain(U)) || throw(SectorMismatch("invalid bulk sector type"))
     layouts = U.space.layout
     haskey(layouts, a) && return _blockview(U, layouts[a])
-    m = dim(TensorKit.HomSpace(codomain(U), forget(a)))
+    W = forget(a)
+    m = sum(r -> blockdim(codomain(U), r) * dim(W, r), sectors(W); init=0)
     return reshape(view(U.data, 1:0), m, blockdim(domain(U), a))
 end
 
