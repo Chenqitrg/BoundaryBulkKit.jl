@@ -58,3 +58,5 @@ end
     @test size(vertex) == (dim(forget(e), odd), dim(forget(m), trivial), dim(forget(em), odd))
     @test only(vertex) == 1
 end
+
+include("junction.jl")
