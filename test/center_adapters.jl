@@ -9,12 +9,19 @@
     @test base_sector(C) === Z3Irrep
     @test all(i -> TensorKit.findindex(values(C),values(C)[i]) == i, 1:9)
     @test only(halfbraiding_symbol(C(1,1),Z3Irrep(1),Z3Irrep(1),Z3Irrep(1),Z3Irrep(2),1,1)) ≈ cispi(2/3)
+    r = Z3Irrep(1)
+    reversed = TimeReversed(r)
+    label = ProductSector((r, reversed))
+    @test_throws ArgumentError ModularDouble(label)
+    @test_throws ArgumentError ModularDouble{Z3Irrep}(label)
+    @test_throws ArgumentError ModularDouble{Z3Irrep}(r, reversed)
     F = take_center(FibonacciAnyon)
     @test F === ModularDouble{FibonacciAnyon}
     @test !(F <: QuantumDouble)
     @test first(diagvalues(F)) == one_modular_double(FibonacciAnyon)
     @test doubleIsing(:σ, :σ) in diagvalues(take_center(IsingAnyon))
     a = last(collect(values(F)))
+    @test ModularDouble(a.label) == a
     V = Vect[FibonacciAnyon](:τ=>1)
     @test HalfBraiding(a,V) ≈ HalfBraiding(Vect[F](a=>1),V)
     for c in a ⊗ a

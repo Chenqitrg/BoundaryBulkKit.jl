@@ -1,7 +1,13 @@
 """The center of a modular category, represented by a sector and a time-reversed sector."""
 struct ModularDouble{I<:Sector} <: DrinfeldCenter{I}
     label::ProductSector{Tuple{I,TimeReversed{I}}}
+
+    function ModularDouble{I}(label) where {I<:Sector}
+        TKS.ismodular(I) || throw(ArgumentError("ModularDouble requires a modular boundary sector, got $I"))
+        return new{I}(label)
+    end
 end
+ModularDouble(label::ProductSector{Tuple{I,TimeReversed{I}}}) where {I<:Sector} = ModularDouble{I}(label)
 ModularDouble{I}(a::I,b::TimeReversed{I}) where {I} = ModularDouble{I}(ProductSector((a,b)))
 _product(::Type{ModularDouble{I}}) where {I} = ProductSector{Tuple{I,TimeReversed{I}}}
 
