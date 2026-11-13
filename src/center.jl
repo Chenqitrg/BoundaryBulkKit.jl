@@ -1,54 +1,67 @@
 """
-    DrinfeldCenter{I} <: Sector
+    DrinfeldCenter{I<:Sector} <: Sector
 
-Supertype of simple bulk sectors in the Drinfeld center of the boundary sector
-type `I`. Concrete subtypes implement TensorKit's ordinary sector interface in
-the bulk and supply the three bulk–boundary operations below in a fixed basis.
+Supertype for the simple labels of the full Drinfeld center of boundary sector
+type `I`. For a concrete center type `C <: DrinfeldCenter{I}`, `values(C)`
+enumerates its simple objects, and `TensorKitSectors.ismodular(C)` returns
+`true` by the center contract. This trait does not validate supplied symbols.
+
+Implement TensorKit's sector interface for `C` (including bulk fusion and
+braiding), then implement [`forget`](@ref), [`halfbraiding_symbol`](@ref) and
+[`forget_vertex`](@ref) in the same junction and fusion-tree bases.
 """
 abstract type DrinfeldCenter{I<:Sector} <: Sector end
 
-"""
-    base_sector(C)
-    base_sector(a)
-
-Boundary sector type associated with a concrete center sector type or label.
-"""
-base_sector(::Type{<:DrinfeldCenter{I}}) where {I} = I
-base_sector(a::DrinfeldCenter) = base_sector(typeof(a))
+TKS.ismodular(::Type{<:DrinfeldCenter}; kwargs...) = true
 
 """
-    forget(a::DrinfeldCenter{I})
+    base_sector(::Type{C}) -> Type{I}
+    base_sector(a::C) -> Type{I}
 
-Return the underlying single boundary leg as a TensorKit space graded by `I`.
-The copies of a boundary sector `r`, indexed from 1 to `dim(forget(a), r)`,
-label the fixed junction basis of projections from the underlying object to `r`.
-Both symbols below use this same ordering.
+For `C <: DrinfeldCenter{I}`, return the boundary sector type `I`.
+"""
+function base_sector(::Type{<:DrinfeldCenter{I}})::Type{I} where {I<:Sector}
+    return I
+end
+function base_sector(::DrinfeldCenter{I})::Type{I} where {I<:Sector}
+    return I
+end
+
+"""
+    forget(a::C) -> ElementarySpace
+
+Implement for `C <: DrinfeldCenter{I}`. The result `X` is one boundary leg
+with `sectortype(X) === I`. The built-in centers use `Vect[I]`, which is
+`ComplexSpace` for `Trivial` and a concrete `GradedSpace{I}` otherwise.
+`dim(X, r)` is the multiplicity of `r::I`; the integers `1:dim(X, r)`
+index its junction basis. Both symbol methods use this copy order.
 """
 function forget end
 
 """
-    halfbraiding_symbol(a, i, r, s, j, μ, ν)
+    halfbraiding_symbol(a::C, i::I, r::I, s::I, j::I, μ::Int, ν::Int) -> AbstractMatrix{<:Number}
 
-Matrix of the crossing `forget(a) ⊗ i → i ⊗ forget(a)` at simple boundary
-sector `i` and total boundary sector `j`. In TensorKit's splitting-tree basis
-the output vertex is `j → i ⊗ r` (channel `μ`) and the input tree is
-`j → s ⊗ i` (channel `ν`).
+Implement for `I <: Sector` and `C <: DrinfeldCenter{I}`. Write `X = forget(a)`.
+For the crossing `X ⊗ i → i ⊗ X` at total boundary charge `j`, the output
+tree splits `j → i ⊗ r` in channel `1 ≤ μ ≤ Nsymbol(i,r,j)`. The input
+tree splits `j → s ⊗ i` in channel `1 ≤ ν ≤ Nsymbol(s,i,j)`.
 
-Return an `AbstractMatrix` of size `(dim(forget(a), r), dim(forget(a), s))`.
-The row selects a copy of `r` on the output, the column a copy of `s` on the
-input. Channel indices are one-based. Only admissible vertices are queried.
+Return a matrix of size `(dim(X,r), dim(X,s))`. Its entry `[p,q]` maps
+input junction copy `q` of `s` to output copy `p` of `r`. Even a single
+phase occupies a 1×1 matrix. The caller supplies admissible tree channels.
 """
 function halfbraiding_symbol end
 
 """
-    forget_vertex(a, b, c, r, s, t, λ, μ)
+    forget_vertex(a::C, b::C, c::C, r::I, s::I, t::I, λ::Int, μ::Int) -> AbstractArray{<:Number,3}
 
-Boundary coefficients of the bulk splitting vertex `c → a ⊗ b` (channel `λ`)
-on the boundary splitting vertex `t → r ⊗ s` (channel `μ`).
+Implement for `I <: Sector` and `C <: DrinfeldCenter{I}`. Expand the bulk
+splitting vertex `c → a ⊗ b` (channel `1 ≤ λ ≤ Nsymbol(a,b,c)`) at the
+boundary vertex `t → r ⊗ s` (channel `1 ≤ μ ≤ Nsymbol(r,s,t)`).
 
-Return a three-axis array indexed by the copies of `r` in `forget(a)`, `s` in
-`forget(b)`, and `t` in `forget(c)`, in that order. Channel indices are
-one-based. Only admissible vertices are queried.
+Return shape `(dim(forget(a),r), dim(forget(b),s), dim(forget(c),t))`.
+Entry `[p,q,k]` goes from input copy `k` of `t` to output copies `p,q`
+of `r,s`. The caller supplies admissible tree channels.
 """
 function forget_vertex end
 
@@ -65,5 +78,13 @@ sector type is `Z3Irrep`.
 """
 const QuantumDouble{G<:TKS.Group} = GroupDoubleSector{I} where {I<:TKS.AbstractIrrep{G}}
 
-"""Return the default concrete center sector type for a boundary sector type."""
+"""
+    take_center(::Type{I}) -> Type{<:DrinfeldCenter{I}}
+
+Return the registered center type for the boundary sector type `I <: Sector`.
+Built-in choices are the trivial center for `Trivial`, `ZNQuantumDouble{N}`
+for `ZNIrrep{N}`, and `ModularDouble{I}` for modular boundaries. Other
+boundaries require a registration; the generic method throws `ArgumentError`
+if the modularity check returns false.
+"""
 function take_center end

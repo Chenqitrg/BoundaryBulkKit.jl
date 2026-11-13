@@ -3,7 +3,7 @@ using TensorKit
 using BoundaryBulkKit
 
 include(joinpath(@__DIR__, "..", "examples", "support", "known_centers.jl"))
-using .ExampleCenters: Z2Center, ElectricA4
+using .ExampleCenters: Z2Center
 
 @testset "Known center data in TensorKit bases" begin
     e, m = Z2Center(true, false), Z2Center(false, true)

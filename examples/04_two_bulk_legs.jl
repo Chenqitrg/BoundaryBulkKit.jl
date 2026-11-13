@@ -1,11 +1,11 @@
 include(joinpath(@__DIR__, "support", "setup.jl"))
 
 let
-    e, m = Z2Center(true, false), Z2Center(false, true)
+    e, m = Z2QuantumDouble(1, 0), Z2QuantumDouble(0, 1)
     em = only(e ⊗ m)
     V = forget(em)
-    W₁ = Vect[Z2Center](e => 2)
-    W₂ = Vect[Z2Center](m => 3)
+    W₁ = Vect[Z2QuantumDouble](e => 2)
+    W₂ = Vect[Z2QuantumDouble](m => 3)
     U = CentralTensorMap(collect(1:6), V, W₁ ⊗ W₂)
 
     fout, v, fin = only(fusiontrees(U))

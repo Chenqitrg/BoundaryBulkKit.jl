@@ -1,10 +1,10 @@
 include(joinpath(@__DIR__, "support", "setup.jl"))
 
 let
-    a = unit(Z2Center)
+    a = unit(Z2QuantumDouble)
     even, odd = Z2Irrep(0), Z2Irrep(1)
     V = Vect[Z2Irrep](even => 1, odd => 1)
-    W = Vect[Z2Center](a => 2)
+    W = Vect[Z2QuantumDouble](a => 2)
     U = CentralTensorMap(collect(1:4), V ⊗ V, W)
 
     # The (even, even) and (odd, odd) output trees give one row each.

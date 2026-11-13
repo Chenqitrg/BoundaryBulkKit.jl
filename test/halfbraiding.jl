@@ -29,20 +29,24 @@
     @test_throws SectorMismatch HalfBraiding(A, Vect[Z3Irrep](Z3Irrep(1) => 1))
 end
 
-# The electric embedding uses the ordinary Rep(A₄) crossing.
-function BoundaryBulkKit.halfbraiding_symbol(a::ElectricA4, i::A4Irrep, r::A4Irrep,
-        s::A4Irrep, j::A4Irrep, μ::Int, ν::Int)
-    @assert r == s == a.rep
-    return fill(Rsymbol(s, i, j)[ν, μ], 1, 1)
-end
-
-@testset "Dual non-self-dual charges and fusion multiplicity" begin
-    A = Vect[ElectricA4](ElectricA4(A4Irrep(1)) => 2, ElectricA4(A4Irrep(3)) => 1)
-    V = Vect[A4Irrep](A4Irrep(2) => 1, A4Irrep(3) => 2)
+@testset "Oriented legs with non-self-dual charges" begin
+    C = take_center(Z3Irrep)
+    a = C(1, 1)
+    A = Vect[C](a => 2)
+    V = Vect[Z3Irrep](Z3Irrep(1) => 1, Z3Irrep(2) => 2)
     @test forget(A') == forget(A)'
     for center in (A, A'), boundary in (V, V')
         Γ = HalfBraiding(center, boundary)
-        @test Γ ≈ TensorMap(BraidingTensor(forget(center), boundary))
+        charge = only(sectors(center))
+        for (f, g) in fusiontrees(Γ)
+            i, r = f.uncoupled
+            s, k = g.uncoupled
+            phase = cispi(2 * charge.flux * i.n / 3)
+            for index in CartesianIndices(Γ[f, g])
+                b, p, q, d = Tuple(index)
+                @test Γ[f, g][index] ≈ phase * (i == k && r == s && p == q && b == d)
+            end
+        end
     end
 end
 

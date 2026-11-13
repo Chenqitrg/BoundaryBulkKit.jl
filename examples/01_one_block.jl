@@ -1,10 +1,10 @@
 include(joinpath(@__DIR__, "support", "setup.jl"))
 
 let
-    a = Z2Center(true, false)  # Electric charge.
+    a = Z2QuantumDouble(1, 0)  # Electric charge.
     r = Z2Irrep(1)
     V = Vect[Z2Irrep](r => 2)
-    W = Vect[Z2Center](a => 3)
+    W = Vect[Z2QuantumDouble](a => 3)
 
     data = collect(1:6)
     U = CentralTensorMap(data, V, W)

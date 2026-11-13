@@ -16,7 +16,7 @@ doubleIsing(a, b) = ModularDouble{IsingAnyon}(IsingAnyon(a), TimeReversed{IsingA
 diagvalues(::Type{ModularDouble{I}}) where {I} =
     (ModularDouble{I}(a, TimeReversed{I}(a)) for a in values(I))
 
-function take_center(::Type{I}) where {I<:Sector}
+function take_center(::Type{I})::Type{ModularDouble{I}} where {I<:Sector}
     TKS.ismodular(I) || throw(ArgumentError("no default center registered for $I"))
     return ModularDouble{I}
 end
@@ -44,7 +44,9 @@ function _factors(a::ModularDouble{I}) where {I}
     l, r = a.label.sectors
     return Vect[I](l=>1) ⊗ Vect[I](r.a=>1)
 end
-forget(a::ModularDouble) = fuse(_factors(a))
+function forget(a::ModularDouble{I})::Vect[I] where {I<:Sector}
+    return fuse(_factors(a))
+end
 
 # Slide the left factor over V and the time-reversed factor under V.
 function HalfBraiding(a::ModularDouble{I}, V::ElementarySpace; T::Type{<:Number}=ComplexF64) where {I}
@@ -56,7 +58,7 @@ function HalfBraiding(a::ModularDouble{I}, V::ElementarySpace; T::Type{<:Number}
         BraidingTensor(V,r)'[k q; j w] * F[i j; y]
     return h
 end
-function halfbraiding_symbol(a::ModularDouble{I}, i::I,r::I,s::I,j::I,μ::Int,ν::Int) where {I}
+function halfbraiding_symbol(a::ModularDouble{I}, i::I,r::I,s::I,j::I,μ::Int,ν::Int)::AbstractMatrix{<:Number} where {I}
     h = HalfBraiding(a,Vect[I](i=>1))
     f = TensorKit.FusionTree((i,r),j,(false,false),(),(μ,))
     g = TensorKit.FusionTree((s,i),j,(false,false),(),(ν,))
@@ -73,7 +75,7 @@ function _split_vertex(a::I, b::I, c::I, channel::Int) where {I<:Sector}
     return t
 end
 
-function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int) where {I,C<:ModularDouble{I}}
+function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::AbstractArray{<:Number,3} where {I,C<:ModularDouble{I}}
     al, ar = a.label.sectors
     bl, br = b.label.sectors
     cl, cr = c.label.sectors

@@ -13,7 +13,9 @@ const 𝒟ZN = ZNQuantumDouble
 const 𝒟Z2 = Z2QuantumDouble
 const 𝒟Z3 = Z3QuantumDouble
 
-take_center(::Type{ZNIrrep{N}}) where {N} = ZNQuantumDouble{N}
+function take_center(::Type{ZNIrrep{N}})::Type{ZNQuantumDouble{N}} where {N}
+    return ZNQuantumDouble{N}
+end
 TensorKit.unit(::Type{C}) where {C<:ZNQuantumDouble} = C(0, 0)
 TensorKit.dual(a::C) where {C<:ZNQuantumDouble} = C(-a.charge, -a.flux)
 TensorKit.:⊗(a::C, b::C) where {C<:ZNQuantumDouble} = (C(a.charge+b.charge, a.flux+b.flux),)
@@ -35,9 +37,12 @@ Base.iterate(v::TKS.SectorValues{C}, i::Int=1) where {C<:ZNQuantumDouble} =
     i <= length(v) ? (v[i], i+1) : nothing
 TKS.findindex(::TKS.SectorValues{ZNQuantumDouble{N}}, a::ZNQuantumDouble{N}) where {N} = 1+a.charge*N+a.flux
 
-forget(a::ZNQuantumDouble{N}) where {N} = Vect[ZNIrrep{N}](ZNIrrep{N}(a.charge)=>1)
-function halfbraiding_symbol(a::ZNQuantumDouble{N}, i::I,r::I,s::I,j::I,μ::Int,ν::Int) where {N,I<:ZNIrrep{N}}
+function forget(a::ZNQuantumDouble{N})::GradedSpace{ZNIrrep{N}} where {N}
+    return Vect[ZNIrrep{N}](ZNIrrep{N}(a.charge)=>1)
+end
+function halfbraiding_symbol(a::ZNQuantumDouble{N}, i::I,r::I,s::I,j::I,μ::Int,ν::Int)::Matrix{ComplexF64} where {N,I<:ZNIrrep{N}}
     return fill(cispi(2 * a.flux * i.n / N), 1, 1)
 end
-forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int) where {N,C<:ZNQuantumDouble{N},I<:ZNIrrep{N}} =
-    ones(Int,1,1,1)
+function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::Array{Int,3} where {N,C<:ZNQuantumDouble{N},I<:ZNIrrep{N}}
+    return ones(Int,1,1,1)
+end

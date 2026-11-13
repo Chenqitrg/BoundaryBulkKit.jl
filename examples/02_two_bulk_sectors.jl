@@ -1,12 +1,12 @@
 include(joinpath(@__DIR__, "support", "setup.jl"))
 
 let
-    e  = Z2Center(true, false)
-    em = Z2Center(true, true)
+    e  = Z2QuantumDouble(1, 0)
+    em = Z2QuantumDouble(1, 1)
     @assert forget(e) == forget(em)  # Both have odd boundary charge.
 
     V = Vect[Z2Irrep](Z2Irrep(1) => 2)
-    W = Vect[Z2Center](e => 1, em => 2)
+    W = Vect[Z2QuantumDouble](e => 1, em => 2)
     U = zeros(Int, CentralTensorMapSpace(V, W))
     block(U, e)[:, 1] .= [1, 2]
     block(U, em) .= [3 5; 4 6]

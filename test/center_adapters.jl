@@ -32,3 +32,12 @@
         @test p' * p ≈ id(forget(c))
     end
 end
+
+@testset "Modularity of center types" begin
+    for C in (take_center(Trivial), Z3QuantumDouble, ModularDouble{FibonacciAnyon}, Z2Center)
+        @test TensorKit.ismodular(C)
+        @test TensorKit.ismodular(C; atol=1e-12)
+        # Independently check the symbols against the parent implementation.
+        @test invoke(TensorKit.ismodular, Tuple{Type{I} where I<:Sector}, C)
+    end
+end

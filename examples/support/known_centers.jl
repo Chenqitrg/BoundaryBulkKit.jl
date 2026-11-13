@@ -17,40 +17,31 @@ Base.iterate(::Z2Labels, i::Int=1) = iterate(Z2_LABELS, i)
 
 TensorKit.unit(::Type{Z2Center}) = Z2Center(false, false)
 TensorKit.dual(a::Z2Center) = a
+TensorKit.BraidingStyle(::Type{Z2Center}) = Anyonic()
+TensorKit.Fsymbol(a::Z2Center,b::Z2Center,c::Z2Center,d::Z2Center,e::Z2Center,f::Z2Center) =
+    Nsymbol(a,b,e) && Nsymbol(e,c,d) && Nsymbol(b,c,f) && Nsymbol(a,f,d)
+TensorKit.Rsymbol(a::Z2Center,b::Z2Center,c::Z2Center) =
+    Nsymbol(a,b,c) * (a.flux && b.charge ? -1 : 1)
+TensorKit.findindex(::Z2Labels, a::Z2Center) = 1 + 2 * a.charge + a.flux
 TensorKit.FusionStyle(::Type{Z2Center}) = UniqueFusion()
 TensorKit.:⊗(a::Z2Center, b::Z2Center) = (Z2Center(a.charge ⊻ b.charge, a.flux ⊻ b.flux),)
 TensorKit.Nsymbol(a::Z2Center, b::Z2Center, c::Z2Center) = c == only(a ⊗ b)
 Base.isless(a::Z2Center, b::Z2Center) = isless((a.charge, a.flux), (b.charge, b.flux))
 
-BoundaryBulkKit.forget(a::Z2Center) = Vect[Z2Irrep](Z2Irrep(a.charge) => 1)
+BoundaryBulkKit.forget(a::Z2Center)::GradedSpace{Z2Irrep} = Vect[Z2Irrep](Z2Irrep(a.charge) => 1)
 
 function BoundaryBulkKit.halfbraiding_symbol(a::Z2Center, i::Z2Irrep, r::Z2Irrep,
-        s::Z2Irrep, j::Z2Irrep, μ::Int, ν::Int)
+        s::Z2Irrep, j::Z2Irrep, μ::Int, ν::Int)::Matrix{Int}
     @assert r == s == Z2Irrep(a.charge)
     @assert μ == ν == 1 && j == only(i ⊗ r)
     return fill(a.flux && i == Z2Irrep(1) ? -1 : 1, 1, 1)
 end
 
 function BoundaryBulkKit.forget_vertex(a::Z2Center, b::Z2Center, c::Z2Center,
-        r::Z2Irrep, s::Z2Irrep, t::Z2Irrep, λ::Int, μ::Int)
+        r::Z2Irrep, s::Z2Irrep, t::Z2Irrep, λ::Int, μ::Int)::Array{Int,3}
     @assert λ == μ == 1 && c == only(a ⊗ b)
     @assert (r, s, t) == (Z2Irrep(a.charge), Z2Irrep(b.charge), Z2Irrep(c.charge))
     return ones(Int, 1, 1, 1)
 end
-
-# Pure electric objects in Z(Rep(A₄)) inherit their fusion from Rep(A₄).
-struct ElectricA4 <: DrinfeldCenter{A4Irrep}
-    rep::A4Irrep
-end
-Base.length(::typeof(values(ElectricA4))) = length(values(A4Irrep))
-Base.getindex(::typeof(values(ElectricA4)), i::Int) = ElectricA4(values(A4Irrep)[i])
-Base.iterate(v::typeof(values(ElectricA4)), i::Int=1) = i <= length(v) ? (v[i], i + 1) : nothing
-Base.isless(a::ElectricA4, b::ElectricA4) = isless(a.rep, b.rep)
-TensorKit.unit(::Type{ElectricA4}) = ElectricA4(unit(A4Irrep))
-TensorKit.dual(a::ElectricA4) = ElectricA4(dual(a.rep))
-TensorKit.FusionStyle(::Type{ElectricA4}) = FusionStyle(A4Irrep)
-TensorKit.:⊗(a::ElectricA4, b::ElectricA4) = (ElectricA4(r) for r in a.rep ⊗ b.rep)
-TensorKit.Nsymbol(a::ElectricA4, b::ElectricA4, c::ElectricA4) = Nsymbol(a.rep, b.rep, c.rep)
-BoundaryBulkKit.forget(a::ElectricA4) = Vect[A4Irrep](a.rep => 1)
 
 end
