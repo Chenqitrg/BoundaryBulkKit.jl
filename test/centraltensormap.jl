@@ -4,6 +4,8 @@
     V = Vect[Z2Irrep](vacuum => 1, odd => 2)
     W = Vect[Z2Center](e => 2, m => 1)
     S = CentralTensorMapSpace(V ⊗ V, W ⊗ W)
+    @test S isa CentralTensorMapSpace{Z2Irrep,Z2Center}
+    @test_throws TypeError CentralTensorMapSpace{Z3Irrep,Z2Center}
     # The unit and em channels each have five or four boundary rows.
     @test dim(S) == 5 * (2 * 2 + 1) + 4 * (2 + 2)
     data = collect(1:dim(S))

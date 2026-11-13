@@ -19,9 +19,8 @@ function _axisranges(width, ::Type{K}, labels) where {K}
     return ranges, offset
 end
 
-function _centralblocks(out::ProductSpace, input::ProductSpace)
-    I, C = sectortype(out), sectortype(input)
-    C <: DrinfeldCenter{I} || throw(SectorMismatch("bulk sector $C must have boundary sector $I"))
+function _centralblocks(out::ProductSpace, input::ProductSpace,
+                        ::Type{I}, ::Type{C}) where {I<:Sector,C<:DrinfeldCenter{I}}
     Fout = TensorKit.fusiontreetype(I, length(out))
     Fin = TensorKit.fusiontreetype(C, length(input))
     R = Tuple{Fout,BoundaryBulkJunction{I,C}}
@@ -50,17 +49,22 @@ end
 
 Space of maps from bulk legs to boundary legs. Both arguments may be elementary
 spaces or TensorKit product spaces. Construct it once to share the block layout
-between maps with the same spaces.
+between maps with the same spaces. The leading type parameters are the boundary
+sector `I` of the codomain and the bulk sector `C <: DrinfeldCenter{I}` of the domain.
+`N` counts the bulk legs, including zero for the tensor unit.
 """
-struct CentralTensorMapSpace{O<:ProductSpace,D<:ProductSpace,L<:Dictionary}
+struct CentralTensorMapSpace{I<:Sector,C<:DrinfeldCenter{I},N,O<:ProductSpace,B<:ElementarySpace,
+                             L<:Dictionary{C,<:CentralBlockLayout}}
     codomain::O
-    domain::D
+    domain::ProductSpace{B,N}
     layout::L
 
     function CentralTensorMapSpace(codomain::TensorSpace, domain::TensorSpace)
         out, input = ProductSpace(codomain), ProductSpace(domain)
-        layout = _centralblocks(out, input)
-        return new{typeof(out),typeof(input),typeof(layout)}(out, input, layout)
+        I, C = sectortype(out), sectortype(input)
+        C <: DrinfeldCenter{I} || throw(SectorMismatch("bulk sector $C must have boundary sector $I"))
+        layout = _centralblocks(out, input, I, C)
+        return new{I,C,length(input),typeof(out),spacetype(input),typeof(layout)}(out, input, layout)
     end
 end
 
