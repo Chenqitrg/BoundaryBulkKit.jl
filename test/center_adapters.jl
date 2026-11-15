@@ -9,12 +9,23 @@
     @test base_sector(C) === Z3Irrep
     @test all(i -> TensorKit.findindex(values(C),values(C)[i]) == i, 1:9)
     @test only(halfbraiding_symbol(C(1,1),Z3Irrep(1),Z3Irrep(1),Z3Irrep(1),Z3Irrep(2),1,1)) ≈ cispi(2/3)
+    r = Z3Irrep(1)
+    @test_throws ArgumentError ModularDouble(r, r)
+    @test_throws ArgumentError ModularDouble{Z3Irrep}(r, r)
     F = take_center(FibonacciAnyon)
     @test F === ModularDouble{FibonacciAnyon}
     @test !(F <: QuantumDouble)
     @test first(diagvalues(F)) == one_modular_double(FibonacciAnyon)
     @test doubleIsing(:σ, :σ) in diagvalues(take_center(IsingAnyon))
     a = last(collect(values(F)))
+    τ = FibonacciAnyon(:τ)
+    u = unit(FibonacciAnyon)
+    @test ModularDouble(τ, τ) == F(τ, τ) == a
+    @test twist(ModularDouble(u, τ)) ≈ conj(twist(τ))
+    @test twist(ModularDouble(τ, u)) ≈ twist(τ)
+    @test repr(ModularDouble(u, τ)) == "ModularDouble($(repr(u)), $(repr(τ)))"
+    @test_throws MethodError ModularDouble(τ, IsingAnyon(:σ))
+    @test_throws MethodError F(u, TimeReversed(τ))
     V = Vect[FibonacciAnyon](:τ=>1)
     @test HalfBraiding(a,V) ≈ HalfBraiding(Vect[F](a=>1),V)
     for c in a ⊗ a
@@ -22,6 +33,18 @@
         for (f,g) in fusiontrees(p)
             p[f,g] .= forget_vertex(a,a,c,f.uncoupled...,g.coupled,1,only(f.vertices))
         end
+        split = zeros(ComplexF64, Vect[F](a=>1) ⊗ Vect[F](a=>1) ← Vect[F](c=>1))
+        block(split, c) .= 1
+        @test forget(split) ≈ p
         @test p' * p ≈ id(forget(c))
+    end
+end
+
+@testset "Modularity of center types" begin
+    for C in (take_center(Trivial), Z3QuantumDouble, ModularDouble{FibonacciAnyon}, Z2Center)
+        @test TensorKit.ismodular(C)
+        @test TensorKit.ismodular(C; atol=1e-12)
+        # Independently check the symbols against the parent implementation.
+        @test invoke(TensorKit.ismodular, Tuple{Type{I} where I<:Sector}, C)
     end
 end

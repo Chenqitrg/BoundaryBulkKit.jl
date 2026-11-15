@@ -1,47 +1,21 @@
-# Within each boundary sector, order by bulk sector, bulk copy, then junction.
-function _forget_layout(A::GradedSpace{C}) where {I,C<:DrinfeldCenter{I}}
-    totals = Dict{I,Int}()
-    summands = map(collect(sectors(A))) do a
-        X = forget(a)
-        copies = dim(A, a)
-        firstcopy = Dict{I,UnitRange{Int}}()
-        for r in sectors(X)
-            offset = get(totals, r, 0)
-            n = dim(X, r)
-            firstcopy[r] = (offset + 1):(offset + n)
-            totals[r] = offset + copies * n
-        end
-        return (; a, copies, firstcopy)
-    end
-    W = Vect[I](totals)
-    return (isdual(A) ? flip(W) : W), summands
-end
-
 """
-    forget(A::GradedSpace{C}) where C <: DrinfeldCenter
-
-Underlying boundary space of a center leg. Within each boundary sector, copies
-are ordered by `sectors(A)`, then by copy in `A`, then by junction in the
-simple object's fixed basis. Preserve the dual orientation of the leg.
-"""
-forget(A::GradedSpace{<:DrinfeldCenter}) = first(_forget_layout(A))
-
-"""
-    HalfBraiding(A, V; T=ComplexF64)
-    HalfBraiding(a, V; T=ComplexF64)
+    HalfBraiding(A::GradedSpace{C}, V::ElementarySpace; T=ComplexF64) -> TensorMap
+    HalfBraiding(a::C, V::ElementarySpace; T=ComplexF64) -> TensorMap
 
 Materialize the boundary TensorMap `V ⊗ forget(A) ← forget(A) ⊗ V`, for a
 center-graded leg `A` and a boundary leg `V`. Each simple half-braiding
 symbol acts on junction copies and preserves both external multiplicity
-indices. A simple center label `a` can also be passed directly.
+indices. For `C <: DrinfeldCenter{I}`, the boundary leg must have sector type
+`I`. A simple label `a` represents one copy. The result has two output and two
+input legs. Choose a numeric `T` that can represent the crossing coefficients.
 """
-function HalfBraiding(A::GradedSpace{C}, V::ElementarySpace; T::Type{<:Number}=ComplexF64) where {C<:DrinfeldCenter}
-    sectortype(V) === base_sector(C) || throw(SectorMismatch("boundary leg must have sector type $(base_sector(C))"))
+function HalfBraiding(A::GradedSpace{C}, V::ElementarySpace; T::Type{<:Number}=ComplexF64)::TensorMap where {I<:Sector,C<:DrinfeldCenter{I}}
+    sectortype(V) === I || throw(SectorMismatch("boundary leg must have sector type $I"))
     X, summands = _forget_layout(A)
     return _assemble_halfbraiding(T, X, V, summands)
 end
 
-function HalfBraiding(a::DrinfeldCenter{I}, V::ElementarySpace; T::Type{<:Number}=ComplexF64) where {I}
+function HalfBraiding(a::DrinfeldCenter{I}, V::ElementarySpace; T::Type{<:Number}=ComplexF64)::TensorMap where {I<:Sector}
     sectortype(V) === I || throw(SectorMismatch("boundary leg must have sector type $I"))
     X = forget(a)
     firstcopy = Dict(r => 1:dim(X, r) for r in sectors(X))

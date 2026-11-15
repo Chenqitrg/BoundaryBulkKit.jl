@@ -8,12 +8,13 @@ using Strided: sreshape
 export DrinfeldCenter, base_sector, take_center, QuantumDouble, ModularDouble, ZNQuantumDouble
 export Z2QuantumDouble, Z3QuantumDouble, 𝒟ZN, 𝒟Z2, 𝒟Z3
 export one_modular_double, doubleIsing, diagvalues
-export forget, halfbraiding_symbol, forget_vertex, HalfBraiding
+export forget, forget_Nsymbol, halfbraiding_symbol, forget_vertex, HalfBraiding
 
 export BoundaryBulkJunction, junctions
 export CentralTensorMap, CentralTensorMapSpace
 
 include("center.jl")
+include("forget.jl")
 include("halfbraiding.jl")
 include("centers/trivial.jl")
 include("centers/cyclic.jl")

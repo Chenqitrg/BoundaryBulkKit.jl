@@ -2,7 +2,7 @@ include(joinpath(@__DIR__, "support", "setup.jl"))
 using LinearAlgebra: Symmetric, eigen
 
 let
-    a = Z2Center(true, false)
+    a = Z2QuantumDouble(1, 0)
     r = Z2Irrep(1)
     V = Vect[Z2Irrep](r => 2)
     T = zeros(Float64, V ← V)
@@ -10,7 +10,7 @@ let
 
     # Diagonalize the small boundary block, then store the two right states.
     D, vectors = eigen(Symmetric(block(T, r)))
-    U = CentralTensorMap{Float64}(undef, V, Vect[Z2Center](a => 2))
+    U = CentralTensorMap{Float64}(undef, V, Vect[Z2QuantumDouble](a => 2))
     B = block(U, a)
     for j in eachindex(D)
         ψ = zeros(Float64, V ← forget(a))

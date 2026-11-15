@@ -9,9 +9,9 @@ struct BoundaryBulkJunction{I<:Sector,C<:DrinfeldCenter{I}}
     boundary::I
     copyindex::Int
 
-    @inline function BoundaryBulkJunction(a::C, r::I, μ::Integer) where {I<:Sector,C<:DrinfeldCenter{I}}
+    @inline function BoundaryBulkJunction(a::C, r::I, μ::Integer)::BoundaryBulkJunction{I,C} where {I<:Sector,C<:DrinfeldCenter{I}}
         @boundscheck begin
-            copies = Base.OneTo(dim(forget(a), r))
+            copies = Base.OneTo(forget_Nsymbol(a, r))
             checkbounds(copies, μ)
         end
         return new{I,C}(a, r, μ)
@@ -39,11 +39,11 @@ function junctions(a::DrinfeldCenter)
     return Iterators.flatten(_junctions(a, r, dim(W, r)) for r in sectors(W))
 end
 
-function junctions(a::DrinfeldCenter{I}, r::I) where {I<:Sector}
-    return _junctions(a, r, dim(forget(a), r))
+function junctions(a::DrinfeldCenter{I}, r::I)::Base.Generator where {I<:Sector}
+    return _junctions(a, r, forget_Nsymbol(a, r))
 end
 
-function _junctions(a::DrinfeldCenter{I}, r::I, n::Int) where {I<:Sector}
+function _junctions(a::DrinfeldCenter{I}, r::I, n::Integer)::Base.Generator where {I<:Sector}
     return ((@inbounds BoundaryBulkJunction(a, r, μ)) for μ in Base.OneTo(n))
 end
 
