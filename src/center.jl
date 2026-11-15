@@ -63,6 +63,19 @@ of `r,s`. The caller supplies admissible tree channels.
 """
 function forget_vertex end
 
+"""
+    forgetvertexscalartype(::Type{C}) where {C<:DrinfeldCenter}
+
+Scalar type for coefficients of the forgetful splitting vertices. As with
+`TensorKit.fusionscalartype`, the default uses the unit vertex. Specialize
+this method when other vertices need a wider type or the unit vertex is
+expensive to construct.
+"""
+function forgetvertexscalartype(::Type{C})::Type{<:Number} where {I<:Sector,C<:DrinfeldCenter{I}}
+    x, a = unit(C), unit(I)
+    return eltype(forget_vertex(x, x, x, a, a, a, 1, 1))
+end
+
 # The boundary irrep type already carries its group parameter.
 abstract type GroupDoubleSector{I<:TKS.AbstractIrrep} <: DrinfeldCenter{I} end
 

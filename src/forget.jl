@@ -43,13 +43,13 @@ end
 
 # Matrix rows index all leaf junctions (first leg varies fastest); columns
 # index junctions on the root. Contract adjacent vertices on their shared edge.
-function _tree_coefficients(f::FusionTree{C,N}, h::FusionTree{I,N},
-                            ranges::NTuple{N,UnitRange{Int}})::Union{Nothing,AbstractMatrix{<:Number}} where
-                            {I<:Sector,C<:DrinfeldCenter{I},N}
-    isempty(ranges) && return ones(Int, 1, 1)
+function _tree_coefficients(::Type{T}, f::FusionTree{C,N}, h::FusionTree{I,N},
+                            ranges::NTuple{N,UnitRange{Int}})::Union{Nothing,Matrix{T}} where
+                           {T<:Number,I<:Sector,C<:DrinfeldCenter{I},N}
+    isempty(ranges) && return ones(T, 1, 1)
     left, r = first(f.uncoupled), first(h.uncoupled)
     n = length(first(ranges))
-    coeff = [Int(i == j) for i in 1:n, j in 1:n]
+    coeff::Matrix{T} = [T(i == j) for i in 1:n, j in 1:n]
     bulk_roots = (f.innerlines..., f.coupled)
     boundary_roots = (h.innerlines..., h.coupled)
     for i in eachindex(f.vertices)
@@ -66,33 +66,35 @@ function _tree_coefficients(f::FusionTree{C,N}, h::FusionTree{I,N},
     return coeff
 end
 
-function _tree_term(f::FusionTree{C,N}, h::FusionTree{I,N},
-                    layouts::NTuple{N,_JunctionRanges{C,I}})::Union{Nothing,NamedTuple{(:h,:ranges,:coeff)}} where
-                    {I<:Sector,C<:DrinfeldCenter{I},N}
-    ranges = map(layouts, f.uncoupled, h.uncoupled) do layout::_JunctionRanges{C,I}, x::C, a::I
-        get(layout[x], a, 1:0)
-    end
-    any(isempty, ranges) && return nothing
-    coeff = _tree_coefficients(f, h, ranges)
-    return isnothing(coeff) ? nothing : (; h, ranges, coeff)
+struct _TreeTerm{F<:FusionTree,N,T<:Number}
+    tree::F
+    ranges::NTuple{N,UnitRange{Int}}
+    coeff::Matrix{T}
 end
 
-function _tree_image(f::FusionTree{C,N}, W::ProductSpace{S,N},
-                     layouts::NTuple{N,_JunctionRanges{C,I}})::Vector where
-                     {I<:Sector,C<:DrinfeldCenter{I},N,S<:ElementarySpace}
-    terms = (_tree_term(f, h, layouts) for t in sectors(forget(f.coupled))
-             for h in fusiontrees(W, t))
-    return collect(Iterators.filter(!isnothing, terms))
-end
-
-function _forget_product(P::ProductSpace{S,N}, T::AbstractTensorMap{<:Number,S}, ::Type{I})::Tuple{ProductSpace{Vect[I],N},Dict} where
-                        {I<:Sector,C<:DrinfeldCenter{I},S<:GradedSpace{C},N}
+function _forget_product(::Type{T}, P::ProductSpace{S,N}, mapspace::AbstractTensorMap{<:Number,S})::Tuple{ProductSpace,Dict} where
+                        {T<:Number,I<:Sector,C<:DrinfeldCenter{I},S<:GradedSpace{C},N}
     parts = map(_forget_layout, P)
     W = ProductSpace{Vect[I]}(map(first, parts))
     layouts = map(parts) do part::Tuple{ElementarySpace,Vector{<:NamedTuple}}
         _JunctionRanges{C,I}(s.a => s.firstcopy for s in last(part))
     end
-    images = Dict(f => _tree_image(f, W, layouts) for c in blocksectors(T) for f in fusiontrees(P, c))
+
+    F = TensorKit.fusiontreetype(C, N)
+    Term = _TreeTerm{TensorKit.fusiontreetype(I, N),N,T}
+    images = Dict{F,Vector{Term}}()
+    for x in blocksectors(mapspace), f in fusiontrees(P, x)
+        terms = Term[]
+        for a in sectors(forget(x)), h in fusiontrees(W, a)
+            ranges = map(layouts, f.uncoupled, h.uncoupled) do layout::_JunctionRanges{C,I}, y::C, b::I
+                get(layout[y], b, 1:0)
+            end
+            any(isempty, ranges) && continue
+            coeff = _tree_coefficients(T, f, h, ranges)
+            isnothing(coeff) || push!(terms, Term(h, ranges, coeff))
+        end
+        images[f] = terms
+    end
     return W, images
 end
 
@@ -125,17 +127,15 @@ same copy order as `forget(V)`. Output splitting trees are expanded using
 """
 function forget(T::AbstractTensorMap{E,S,M,N})::TensorMap{<:Number,Vect[I],M,N} where
                {E<:Number,I<:Sector,C<:DrinfeldCenter{I},S<:GradedSpace{C},M,N}
-    out, rows = _forget_product(codomain(T), T, I)
-    input, cols = _forget_product(domain(T), T, I)
-    scalar = E
-    for images in (rows, cols), terms in values(images), term in terms
-        scalar = promote_type(scalar, eltype(term.coeff))
-    end
-    result = zeros(scalar, out ← input)
+    # Zero- and one-leg trees have only identity junction coefficients.
+    coefftype = max(M, N) < 2 ? Int : promote_type(Int, forgetvertexscalartype(C))
+    out, rows = _forget_product(coefftype, codomain(T), T)
+    input, cols = _forget_product(coefftype, domain(T), T)
+    result = zeros(promote_type(E, coefftype), out ← input)
     for (f, g) in fusiontrees(T), row in rows[f], col in cols[g]
-        row.h.coupled == col.h.coupled || continue
+        row.tree.coupled == col.tree.coupled || continue
         weights = row.coeff * col.coeff'
-        _add_tree_image!(result[row.h, col.h], T[f, g], row.ranges, col.ranges, weights)
+        _add_tree_image!(result[row.tree, col.tree], T[f, g], row.ranges, col.ranges, weights)
     end
     return result
 end

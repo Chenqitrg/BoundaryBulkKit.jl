@@ -46,6 +46,7 @@ end
 function halfbraiding_symbol(a::ZNQuantumDouble{N}, i::I,r::I,s::I,j::I,μ::Int,ν::Int)::Matrix{ComplexF64} where {N,I<:ZNIrrep{N}}
     return fill(cispi(2 * a.flux * i.n / N), 1, 1)
 end
+forgetvertexscalartype(::Type{<:ZNQuantumDouble})::Type{Int} = Int
 function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::Array{Int,3} where {N,C<:ZNQuantumDouble{N},I<:ZNIrrep{N}}
     return ones(Int,1,1,1)
 end

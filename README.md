@@ -34,7 +34,10 @@ For a center-graded space `V`, the multiplicity of a boundary sector `r` is
 `dim(forget(V), r) = sum(dim(V, a) * forget_Nsymbol(a, r) for a in sectors(V))`.
 The same construction on one simple object gives `forget(a)`.
 For a center-graded tensor map `T`, `forget(T)` sends each leg to its boundary
-space and applies `forget_vertex` at each fusion vertex.
+space and applies `forget_vertex` at each fusion vertex. For trees with vertices,
+`forgetvertexscalartype(C)` determines the coefficient type before allocation.
+Its default uses the element type of the unit vertex, following TensorKitSectors’
+`fusionscalartype` convention. Override it if another channel needs a wider type.
 
 Read the [custom Z₂ implementation](examples/support/known_centers.jl) and run
 [its comparison with the built-in quantum double](examples/08_custom_center.jl).

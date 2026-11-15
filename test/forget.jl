@@ -7,9 +7,9 @@
     A = zeros(ComplexF64, V ← V)
     block(A, x) .= [1 2im; 3 4]
     block(A, y) .= 5
-    @test block(forget(A), Z3Irrep(1)) == [1 2im 0; 3 4 0; 0 0 5]
+    @test block(@inferred(forget(A)), Z3Irrep(1)) == [1 2im 0; 3 4 0; 0 0 5]
     @test forget(A ⊗ id(V')) ≈ forget(A) ⊗ id(forget(V'))
-    @test forget(id(Vect[C]())) == id(forget(Vect[C]()))
+    @test @inferred(forget(id(Vect[C]()))) == id(forget(Vect[C]()))
 
     J = Vect[JunctionFixture](JunctionFixture() => 2)
     D = zeros(ComplexF64, J ← J)
@@ -24,10 +24,23 @@
         A = randn(ComplexF64, P ← X ⊗ X)
         B = randn(ComplexF64, X ⊗ X ← X)
         @test forget(id(P)) ≈ id(W)
-        @test forget(A * B) ≈ forget(A) * forget(B)
-        @test forget(A') ≈ forget(A)'
+        @test @inferred(forget(A * B)) ≈ forget(A) * forget(B)
+        @test @inferred(forget(A')) ≈ forget(A)'
         @test forget(B ⊗ id(X)) ≈ forget(B) ⊗ id(forget(X))
         state = randn(ComplexF64, P ← one(P))
         @test forget(state') * forget(state) ≈ forget(state' * state)
+    end
+end
+
+@testset "Forgetful scalar type and inference" begin
+    for (C, expected) in ((Z3QuantumDouble, Float32), (Z2Center, Float32),
+                          (take_center(Trivial), Float32), (ModularDouble{FibonacciAnyon}, ComplexF64))
+        V = Vect[C](unit(C) => 1)
+        for P in (V ⊗ V, V ⊗ Vect[C]())
+            image = @inferred forget(zeros(Float32, P ← V))
+            @test scalartype(image) === expected
+        end
+        scalar = zeros(Float32, one(ProductSpace(V)) ← one(ProductSpace(V)))
+        @test scalartype(@inferred forget(scalar)) === Float32
     end
 end

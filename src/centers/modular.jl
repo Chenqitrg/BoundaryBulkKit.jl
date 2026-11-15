@@ -110,6 +110,10 @@ function _split_vertex(a::I, b::I, c::I, channel::Int) where {I<:Sector}
     return t
 end
 
+function forgetvertexscalartype(::Type{ModularDouble{I}})::Type{<:Number} where {I<:Sector}
+    return complex(float(TensorKit.sectorscalartype(I)))
+end
+
 function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::AbstractArray{<:Number,3} where {I,C<:ModularDouble{I}}
     al, ar = a.label.sectors
     bl, br = b.label.sectors
@@ -119,7 +123,7 @@ function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::AbstractA
     left, right = divrem(λ-1,nright)
     L = _split_vertex(al,bl,cl,left+1)
     R = _split_vertex(ar.a,br.a,cr.a,right+1)
-    E = complex(float(TensorKit.sectorscalartype(I)))
+    E = forgetvertexscalartype(C)
     A = unitary(E, _factors(a) ← forget(a))
     B = unitary(E, _factors(b) ← forget(b))
     Cmap = unitary(E, _factors(c) ← forget(c))

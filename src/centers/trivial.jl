@@ -16,4 +16,5 @@ Base.iterate(::TKS.SectorValues{TrivialCenter}, i::Int=1) = iterate((TrivialCent
 TKS.findindex(::TKS.SectorValues{TrivialCenter},::TrivialCenter) = 1
 forget_Nsymbol(::TrivialCenter, ::Trivial)::Int = 1
 halfbraiding_symbol(::TrivialCenter,::Trivial,::Trivial,::Trivial,::Trivial,::Int,::Int)::Matrix{Int} = ones(Int,1,1)
+forgetvertexscalartype(::Type{TrivialCenter})::Type{Int} = Int
 forget_vertex(::TrivialCenter,::TrivialCenter,::TrivialCenter,::Trivial,::Trivial,::Trivial,::Int,::Int)::Array{Int,3} = ones(Int,1,1,1)
