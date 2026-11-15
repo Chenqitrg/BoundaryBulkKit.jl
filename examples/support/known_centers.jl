@@ -28,7 +28,7 @@ TensorKit.:⊗(a::Z2Center, b::Z2Center) = (Z2Center(a.charge ⊻ b.charge, a.fl
 TensorKit.Nsymbol(a::Z2Center, b::Z2Center, c::Z2Center) = c == only(a ⊗ b)
 Base.isless(a::Z2Center, b::Z2Center) = isless((a.charge, a.flux), (b.charge, b.flux))
 
-BoundaryBulkKit.forget(a::Z2Center)::GradedSpace{Z2Irrep} = Vect[Z2Irrep](Z2Irrep(a.charge) => 1)
+BoundaryBulkKit.forget_Nsymbol(x::Z2Center, a::Z2Irrep)::Int = Int(a == Z2Irrep(x.charge))
 
 function BoundaryBulkKit.halfbraiding_symbol(a::Z2Center, i::Z2Irrep, r::Z2Irrep,
         s::Z2Irrep, j::Z2Irrep, μ::Int, ν::Int)::Matrix{Int}

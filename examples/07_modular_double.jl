@@ -4,7 +4,7 @@ let
     I = FibonacciAnyon
     C = take_center(I)
     τ = I(:τ)
-    a = C(τ, TimeReversed{I}(τ))
+    a = C(τ, τ)
     X = forget(a)
     @assert X == Vect[I](unit(I) => 1, τ => 1)
     @assert length(collect(junctions(a))) == 2

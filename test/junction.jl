@@ -1,6 +1,6 @@
 # Only the forgetful decomposition is needed to test junctions with multiplicity.
 struct JunctionFixture <: DrinfeldCenter{Z2Irrep} end
-BoundaryBulkKit.forget(::JunctionFixture) = Vect[Z2Irrep](Z2Irrep(0) => 1, Z2Irrep(1) => 2)
+BoundaryBulkKit.forget_Nsymbol(::JunctionFixture, a::Z2Irrep)::Int = a == Z2Irrep(0) ? 1 : 2
 
 @testset "Bulk–boundary junction basis" begin
     a = JunctionFixture()

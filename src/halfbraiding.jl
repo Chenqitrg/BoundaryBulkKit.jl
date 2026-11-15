@@ -1,34 +1,3 @@
-# Within each boundary sector, order by bulk sector, bulk copy, then junction.
-function _forget_layout(A::GradedSpace{C}) where {I<:Sector,C<:DrinfeldCenter{I}}
-    totals = Dict{I,Int}()
-    summands = map(collect(sectors(A))) do a
-        X = forget(a)
-        copies = dim(A, a)
-        firstcopy = Dict{I,UnitRange{Int}}()
-        for r in sectors(X)
-            offset = get(totals, r, 0)
-            n = dim(X, r)
-            firstcopy[r] = (offset + 1):(offset + n)
-            totals[r] = offset + copies * n
-        end
-        return (; a, copies, firstcopy)
-    end
-    W = Vect[I](totals)
-    return (isdual(A) ? flip(W) : W), summands
-end
-
-"""
-    forget(A::GradedSpace{C}) -> ElementarySpace, with C <: DrinfeldCenter{I}
-
-Underlying boundary space of a center leg. Within each boundary sector, copies
-are ordered by `sectors(A)`, then by copy in `A`, then by junction in the
-simple object's fixed basis. The result has sector type `I` and the same dual
-orientation as `A`.
-"""
-function forget(A::GradedSpace{C})::Vect[I] where {I<:Sector,C<:DrinfeldCenter{I}}
-    return first(_forget_layout(A))
-end
-
 """
     HalfBraiding(A::GradedSpace{C}, V::ElementarySpace; T=ComplexF64) -> TensorMap
     HalfBraiding(a::C, V::ElementarySpace; T=ComplexF64) -> TensorMap

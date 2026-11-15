@@ -37,12 +37,16 @@ Base.iterate(v::TKS.SectorValues{C}, i::Int=1) where {C<:ZNQuantumDouble} =
     i <= length(v) ? (v[i], i+1) : nothing
 TKS.findindex(::TKS.SectorValues{ZNQuantumDouble{N}}, a::ZNQuantumDouble{N}) where {N} = 1+a.charge*N+a.flux
 
-function forget(a::ZNQuantumDouble{N})::GradedSpace{ZNIrrep{N}} where {N}
-    return Vect[ZNIrrep{N}](ZNIrrep{N}(a.charge)=>1)
+function _boundary_labels(x::ZNQuantumDouble{N})::Tuple{ZNIrrep{N}} where {N}
+    return (ZNIrrep{N}(x.charge),)
+end
+function forget_Nsymbol(x::ZNQuantumDouble{N}, a::ZNIrrep{N})::Int where {N}
+    return Int(x.charge == a.n)
 end
 function halfbraiding_symbol(a::ZNQuantumDouble{N}, i::I,r::I,s::I,j::I,μ::Int,ν::Int)::Matrix{ComplexF64} where {N,I<:ZNIrrep{N}}
     return fill(cispi(2 * a.flux * i.n / N), 1, 1)
 end
+forgetvertexscalartype(::Type{<:ZNQuantumDouble})::Type{Int} = Int
 function forget_vertex(a::C,b::C,c::C,r::I,s::I,t::I,λ::Int,μ::Int)::Array{Int,3} where {N,C<:ZNQuantumDouble{N},I<:ZNIrrep{N}}
     return ones(Int,1,1,1)
 end

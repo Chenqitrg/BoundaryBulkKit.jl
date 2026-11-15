@@ -7,7 +7,7 @@ enumerates its simple objects, and `TensorKitSectors.ismodular(C)` returns
 `true` by the center contract. This trait does not validate supplied symbols.
 
 Implement TensorKit's sector interface for `C` (including bulk fusion and
-braiding), then implement [`forget`](@ref), [`halfbraiding_symbol`](@ref) and
+braiding), then implement [`forget_Nsymbol`](@ref), [`halfbraiding_symbol`](@ref) and
 [`forget_vertex`](@ref) in the same junction and fusion-tree bases.
 """
 abstract type DrinfeldCenter{I<:Sector} <: Sector end
@@ -28,25 +28,23 @@ function base_sector(::DrinfeldCenter{I})::Type{I} where {I<:Sector}
 end
 
 """
-    forget(a::C) -> ElementarySpace
+    forget_Nsymbol(x::DrinfeldCenter{I}, a::I) where {I<:Sector}
 
-Implement for `C <: DrinfeldCenter{I}`. The result `X` is one boundary leg
-with `sectortype(X) === I`. The built-in centers use `Vect[I]`, which is
-`ComplexSpace` for `Trivial` and a concrete `GradedSpace{I}` otherwise.
-`dim(X, r)` is the multiplicity of `r::I`; the integers `1:dim(X, r)`
-index its junction basis. Both symbol methods use this copy order.
+Return the nonnegative integer multiplicity of boundary sector `a` in the
+forgetful image of `x`, including zero for an absent sector. Copies are
+numbered from one in the junction basis shared by both symbol methods.
 """
-function forget end
+function forget_Nsymbol end
 
 """
     halfbraiding_symbol(a::C, i::I, r::I, s::I, j::I, μ::Int, ν::Int) -> AbstractMatrix{<:Number}
 
-Implement for `I <: Sector` and `C <: DrinfeldCenter{I}`. Write `X = forget(a)`.
-For the crossing `X ⊗ i → i ⊗ X` at total boundary charge `j`, the output
+Implement for `I <: Sector` and `C <: DrinfeldCenter{I}`. Write `m(a,r) = forget_Nsymbol(a,r)`.
+For the crossing `forget(a) ⊗ i → i ⊗ forget(a)` at total boundary charge `j`, the output
 tree splits `j → i ⊗ r` in channel `1 ≤ μ ≤ Nsymbol(i,r,j)`. The input
 tree splits `j → s ⊗ i` in channel `1 ≤ ν ≤ Nsymbol(s,i,j)`.
 
-Return a matrix of size `(dim(X,r), dim(X,s))`. Its entry `[p,q]` maps
+Return a matrix of size `(m(a,r), m(a,s))`. Its entry `[p,q]` maps
 input junction copy `q` of `s` to output copy `p` of `r`. Even a single
 phase occupies a 1×1 matrix. The caller supplies admissible tree channels.
 """
@@ -59,11 +57,24 @@ Implement for `I <: Sector` and `C <: DrinfeldCenter{I}`. Expand the bulk
 splitting vertex `c → a ⊗ b` (channel `1 ≤ λ ≤ Nsymbol(a,b,c)`) at the
 boundary vertex `t → r ⊗ s` (channel `1 ≤ μ ≤ Nsymbol(r,s,t)`).
 
-Return shape `(dim(forget(a),r), dim(forget(b),s), dim(forget(c),t))`.
+With `m = forget_Nsymbol`, return shape `(m(a,r), m(b,s), m(c,t))`.
 Entry `[p,q,k]` goes from input copy `k` of `t` to output copies `p,q`
 of `r,s`. The caller supplies admissible tree channels.
 """
 function forget_vertex end
+
+"""
+    forgetvertexscalartype(::Type{C}) where {C<:DrinfeldCenter}
+
+Scalar type for coefficients of the forgetful splitting vertices. As with
+`TensorKit.fusionscalartype`, the default uses the unit vertex. Specialize
+this method when other vertices need a wider type or the unit vertex is
+expensive to construct.
+"""
+function forgetvertexscalartype(::Type{C})::Type{<:Number} where {I<:Sector,C<:DrinfeldCenter{I}}
+    x, a = unit(C), unit(I)
+    return eltype(forget_vertex(x, x, x, a, a, a, 1, 1))
+end
 
 # The boundary irrep type already carries its group parameter.
 abstract type GroupDoubleSector{I<:TKS.AbstractIrrep} <: DrinfeldCenter{I} end

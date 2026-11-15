@@ -2,7 +2,7 @@
     I = FibonacciAnyon
     C = take_center(I)
     τ = I(:τ)
-    a = C(τ, TimeReversed{I}(unit(I)))
+    a = C(τ, unit(I))
     V, W = Vect[I](τ => 1), Vect[C](a => 1)
     U = zeros(Int, CentralTensorMapSpace(V ⊗ V ⊗ V, W ⊗ W ⊗ W))
     B = block(U, a)

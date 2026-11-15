@@ -35,3 +35,4 @@ include("central_fusion.jl")
 include("halfbraiding.jl")
 
 include("center_adapters.jl")
+include("forget.jl")

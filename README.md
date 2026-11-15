@@ -10,7 +10,7 @@ boundary legs.
 | --- | --- | --- |
 | `Trivial` | The center with one simple object. Its forgetful image is `ℂ^1`. | [Trivial center and ordinary matrix](examples/09_trivial_center.jl) |
 | `ZNIrrep{N}` | `ZNQuantumDouble{N}`, with labels `(charge, flux)`. Forgetting retains the charge. Crossing a boundary charge detects the flux. | [Junction projections and half-braiding](examples/06_junction_and_crossing.jl) |
-| A modular sector such as `FibonacciAnyon` or `IsingAnyon` | `ModularDouble{I}`, with labels `(left, time-reversed right)`. A simple bulk object can decompose into several boundary sectors. | [Fibonacci decomposition, crossing and splitting vertex](examples/07_modular_double.jl) |
+| A modular sector such as `FibonacciAnyon` or `IsingAnyon` | `ModularDouble(left, right)` takes two labels of type `I` and reverses the braiding of the right factor internally. A simple bulk object can decompose into several boundary sectors. | [Fibonacci decomposition, crossing and splitting vertex](examples/07_modular_double.jl) |
 
 ## Implementing another center
 
@@ -22,13 +22,22 @@ for a new boundary type, define `BoundaryBulkKit.take_center(::Type{I}) = C`.
 
 The three additional methods use the same one-based junction basis. Lowercase
 `a, b, c` below have type `C`; `i, j, r, s, t` have type `I`.
-Write `m(a,r) = dim(forget(a),r)` for the number of copies.
+Write `m(a,r) = forget_Nsymbol(a,r)` for the number of copies.
 
 | Method | Result | Meaning of one entry |
 | --- | --- | --- |
-| `forget(a)` | An `ElementarySpace` with sector type `I` | Its multiplicities specify the junctions from `a` to each boundary sector. |
+| `forget_Nsymbol(a,r)` | Nonnegative integer | Number of junction copies from bulk sector `a` to boundary sector `r`. |
 | `halfbraiding_symbol(a,i,r,s,j,μ,ν)` | Numeric matrix of size `(m(a,r), m(a,s))` | Entry `[p,q]` maps copy `q` of `s` to copy `p` of `r` while crossing `i`. Channels `μ,ν` select the output and input trees of total charge `j`. |
 | `forget_vertex(a,b,c,r,s,t,λ,μ)` | Numeric rank-three array of size `(m(a,r), m(b,s), m(c,t))` | Entry `[p,q,k]` maps copy `k` of `t` to copies `p,q` of `r,s`, for bulk channel `λ` and boundary channel `μ`. |
+
+For a center-graded space `V`, the multiplicity of a boundary sector `r` is
+`dim(forget(V), r) = sum(dim(V, a) * forget_Nsymbol(a, r) for a in sectors(V))`.
+The same construction on one simple object gives `forget(a)`.
+For a center-graded tensor map `T`, `forget(T)` sends each leg to its boundary
+space and applies `forget_vertex` at each fusion vertex. For trees with vertices,
+`forgetvertexscalartype(C)` determines the coefficient type before allocation.
+Its default uses the element type of the unit vertex, following TensorKitSectors’
+`fusionscalartype` convention. Override it if another channel needs a wider type.
 
 Read the [custom Z₂ implementation](examples/support/known_centers.jl) and run
 [its comparison with the built-in quantum double](examples/08_custom_center.jl).
